@@ -103,3 +103,58 @@ begin
     return wages;
     
 END //
+
+delimiter //
+create trigger trDetailsBeforeUpdate before update on details
+	for each row
+		begin
+			set new.department = upper(new.department);
+end //
+
+update details set department = 'new dept' where id = 5;
+
+drop table if exists orders_audit;
+create table orders_audit
+(
+	order_id	int not null,
+    person_id	int not null,
+    action_type	varchar(50),
+    action_date	datetime not null
+);
+
+drop trigger if exists trOrdersAfterInsert;
+delimiter //
+create trigger trOrdersAfterInsert after insert on orders
+	for each row
+		begin
+			insert into orders_audit values(new.o_id, new.p_id, 'inserted', now());
+end //
+insert into orders values (6,4433,4);
+select * from orders_audit;
+
+show triggers;
+show triggers in db4_2024;
+
+delete from orders where o_id = 6;
+
+select * from orders_audit;
+
+drop trigger if exists trOrdersAfterDelete;
+delimiter //
+create trigger trOrdersAfterDelete before delete on orders
+	 for each row
+		begin
+			insert into orders_audit values(old.o_id, old.p_id, 'deleted', now());
+end //
+
+show variables;
+
+/*
+drop event if exists evOneTimeDeleteAuditTrial;
+delimiter //
+create event evOneTimeDeleteAuditTrial
+on schedule every 1 month
+starts '2022-09-20'
+do begin
+delete from orders_audit
+*/
